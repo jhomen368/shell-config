@@ -124,13 +124,13 @@ extract() {
             *.tar.xz)    tar xJf "$1" -C "$dest"           ;;
             *.tar.zst)   tar --zstd -xf "$1" -C "$dest"    ;;
             *.tar)       tar xf "$1" -C "$dest"            ;;
-            *.bz2)       cp "$1" "$dest/" && bunzip2 "$dest/$(basename "$1")" ;;
+            *.bz2)       bunzip2 -c "$1" > "$dest/$(basename "${1%.bz2}")" ;;
             *.gz)        gunzip -c "$1" > "$dest/$(basename "${1%.gz}")" ;;
             *.zip)       unzip "$1" -d "$dest"             ;;
-            *.Z)         cp "$1" "$dest/" && uncompress "$dest/$(basename "$1")" ;;
+            *.Z)         uncompress -c "$1" > "$dest/$(basename "${1%.Z}")" ;;
             *.7z)        7z x "$1" -o"$dest"               ;;
             *.rar)       unrar x "$1" "$dest/"             ;;
-            *.xz)        cp "$1" "$dest/" && unxz "$dest/$(basename "$1")" ;;
+            *.xz)        xz -c -d "$1" > "$dest/$(basename "${1%.xz}")" ;;
             *.zst)       unzstd "$1" -o "$dest/$(basename "${1%.zst}")" ;;
             *)           echo "Don't know how to extract '$1'" ;;
         esac

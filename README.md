@@ -6,7 +6,7 @@ Personal shell configuration, managed as a git repo and symlinked to `~/.bashrc`
 
 ```bash
 git clone https://github.com/jhomen368/shell-config.git ~/.shell-config
-cp ~/.bashrc ~/.bashrc.backup   # backup existing bashrc
+[ -f ~/.bashrc ] && cp ~/.bashrc ~/.bashrc.backup   # backup existing bashrc (if any)
 rm ~/.bashrc
 ln -s ~/.shell-config/.bashrc ~/.bashrc
 source ~/.bashrc
@@ -36,7 +36,7 @@ The git branch is shown in **green** when the working tree is clean, and **red**
 |---|---|---|
 | `HISTSIZE` | 10,000 | Number of commands kept in memory |
 | `HISTFILESIZE` | 20,000 | Number of commands saved to disk |
-| `HISTTIMEFORMAT` | `%F %T` | Each entry is timestamped (e.g. `2026-03-28 20:00:00`) |
+| `HISTTIMEFORMAT` | `"%F %T  "` (two trailing spaces) | Each entry is timestamped (e.g. `2026-03-28 20:00:00  command`) |
 | `HISTCONTROL` | `ignoreboth` | Ignores duplicates and commands prefixed with a space |
 | `histappend` | enabled | New sessions append to history instead of overwriting it |
 
