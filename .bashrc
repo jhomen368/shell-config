@@ -105,32 +105,53 @@ mkcd() {
     mkdir -p "$1" && cd "$1"
 }
 
-# Universal extract function
+# Universal extract function with optional destination directory
 extract() {
     if [[ -z "$1" ]]; then
-        echo "Usage: extract <archive>"
+        echo "Usage: extract <archive> [destination]"
         return 1
     fi
     if [[ ! -f "$1" ]]; then
         echo "'$1' is not a valid file"
         return 1
     fi
-    case "$1" in
-        *.tar.bz2)   tar xjf "$1"     ;;
-        *.tar.gz)    tar xzf "$1"     ;;
-        *.tar.xz)    tar xJf "$1"     ;;
-        *.tar.zst)   tar --zstd -xf "$1" ;;
-        *.tar)       tar xf "$1"      ;;
-        *.bz2)       bunzip2 "$1"     ;;
-        *.gz)        gunzip "$1"      ;;
-        *.zip)       unzip "$1"       ;;
-        *.Z)         uncompress "$1"  ;;
-        *.7z)        7z x "$1"        ;;
-        *.rar)       unrar x "$1"     ;;
-        *.xz)        unxz "$1"        ;;
-        *.zst)       unzstd "$1"      ;;
-        *)           echo "Don't know how to extract '$1'" ;;
-    esac
+    local dest="$2"
+    if [[ -n "$dest" ]]; then
+        mkdir -p "$dest"
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1" -C "$dest"           ;;
+            *.tar.gz)    tar xzf "$1" -C "$dest"           ;;
+            *.tar.xz)    tar xJf "$1" -C "$dest"           ;;
+            *.tar.zst)   tar --zstd -xf "$1" -C "$dest"    ;;
+            *.tar)       tar xf "$1" -C "$dest"            ;;
+            *.bz2)       cp "$1" "$dest/" && bunzip2 "$dest/$(basename "$1")" ;;
+            *.gz)        gunzip -c "$1" > "$dest/$(basename "${1%.gz}")" ;;
+            *.zip)       unzip "$1" -d "$dest"             ;;
+            *.Z)         cp "$1" "$dest/" && uncompress "$dest/$(basename "$1")" ;;
+            *.7z)        7z x "$1" -o"$dest"               ;;
+            *.rar)       unrar x "$1" "$dest/"             ;;
+            *.xz)        cp "$1" "$dest/" && unxz "$dest/$(basename "$1")" ;;
+            *.zst)       unzstd "$1" -o "$dest/$(basename "${1%.zst}")" ;;
+            *)           echo "Don't know how to extract '$1'" ;;
+        esac
+    else
+        case "$1" in
+            *.tar.bz2)   tar xjf "$1"      ;;
+            *.tar.gz)    tar xzf "$1"      ;;
+            *.tar.xz)    tar xJf "$1"      ;;
+            *.tar.zst)   tar --zstd -xf "$1" ;;
+            *.tar)       tar xf "$1"       ;;
+            *.bz2)       bunzip2 "$1"      ;;
+            *.gz)        gunzip "$1"       ;;
+            *.zip)       unzip "$1"        ;;
+            *.Z)         uncompress "$1"   ;;
+            *.7z)        7z x "$1"         ;;
+            *.rar)       unrar x "$1"      ;;
+            *.xz)        unxz "$1"         ;;
+            *.zst)       unzstd "$1"       ;;
+            *)           echo "Don't know how to extract '$1'" ;;
+        esac
+    fi
 }
 
 # ──────────────────────────────────────────────────────
