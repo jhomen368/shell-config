@@ -5,7 +5,7 @@ Personal shell configuration, managed as a git repo and symlinked to `~/.bashrc`
 ## Setup on a new machine
 
 ```bash
-git clone <your-repo-url> ~/.shell-config
+git clone https://github.com/jhomen368/shell-config.git ~/.shell-config
 cp ~/.bashrc ~/.bashrc.backup   # backup existing bashrc
 rm ~/.bashrc
 ln -s ~/.shell-config/.bashrc ~/.bashrc
