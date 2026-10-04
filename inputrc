@@ -1,0 +1,22 @@
+# ~/.inputrc — managed from shell-config/inputrc (symlinked by install.sh)
+# Readline settings for bash and other readline programs.
+
+# Keep the system defaults (Home/End/Delete key bindings, etc.)
+$include /etc/inputrc
+
+# ──────────────────────────────────────────────────────
+# COMPLETION
+# ──────────────────────────────────────────────────────
+set completion-ignore-case on     # Tab completion ignores case
+set show-all-if-ambiguous on      # List matches on the first Tab, not the second
+
+# ──────────────────────────────────────────────────────
+# HISTORY SEARCH
+# Type the start of a command, then Up/Down to cycle through
+# history entries that begin with it. Empty line = normal Up/Down.
+# ──────────────────────────────────────────────────────
+"\e[A": history-search-backward
+"\e[B": history-search-forward
+# Same keys in application cursor mode (sent by some terminals)
+"\eOA": history-search-backward
+"\eOB": history-search-forward
