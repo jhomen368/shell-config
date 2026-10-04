@@ -133,7 +133,7 @@ Prefix a command with a space to prevent it from being saved to history — usef
 #### `cdg`
 Jump to the root of the current git repository from anywhere inside it:
 ```bash
-cd ~/repos/jhomen368/home-ops/clusters/homenet-main/apps/jellyfin
+cd ~/repos/jhomen368/home-ops/some/deeply/nested/folder
 cdg
 # → ~/repos/jhomen368/home-ops
 ```
