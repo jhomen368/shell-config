@@ -1,22 +1,65 @@
 # shell-config
 
-Personal shell configuration, managed as a git repo and symlinked to `~/.bashrc`.
+Personal shell configuration, managed as a git repo and symlinked into `$HOME`.
+Tested on Ubuntu 22.04 and meant to work on any Linux host with bash. Optional tools (zoxide, vim, bash-completion) are used when installed and skipped silently when they aren't.
 
 ## Setup on a new machine
 
 ```bash
 git clone https://github.com/jhomen368/shell-config.git ~/.shell-config
-[ -f ~/.bashrc ] && cp ~/.bashrc ~/.bashrc.backup   # backup existing bashrc (if any)
-rm ~/.bashrc
-ln -s ~/.shell-config/.bashrc ~/.bashrc
+~/.shell-config/install.sh
 source ~/.bashrc
 ```
 
-## Files
+## install.sh
 
-- `.bashrc` — main bash configuration (symlinked to `~/.bashrc`)
-- `README.md` — this file
-- `~/.bashrc.local` — **not committed** — machine-specific overrides (secrets, work configs, extra PATH entries)
+`install.sh` symlinks each file below into `$HOME`. It finds the repo from its own location, so the clone can live anywhere.
+
+| Repo file | Linked to |
+|---|---|
+| `.bashrc` | `~/.bashrc` |
+| `inputrc` | `~/.inputrc` |
+| `vimrc` | `~/.vimrc` |
+| `tmux.conf` | `~/.tmux.conf` |
+
+Running it again is safe. For each target:
+
+| Target state | Action |
+|---|---|
+| Already a symlink to this repo | Left alone (`ok`) |
+| Symlink pointing somewhere else | Replaced (`relink`) |
+| Real file or directory | Moved to `<target>.backup`, then linked (`backup`) |
+| Real file, and `<target>.backup` already exists | Skipped with a warning, exit code 1. A backup is never overwritten. |
+
+## Three layers
+
+Bash config loads in three layers. Later layers override earlier ones.
+
+| Layer | Path | Scope | Where it comes from |
+|---|---|---|---|
+| 1 | `~/.bashrc` (this repo) | Every machine | `install.sh` |
+| 2 | `~/.bashrc.d/*.sh` | One kind of machine (WSL, dev hosts, ...) | Provisioning (e.g. Ansible) or private dotfiles |
+| 3 | `~/.bashrc.local` | This machine only | Created by hand, never committed |
+
+This repo is public. Anything machine-specific or personal (hostnames, usernames, Windows paths, WSL aliases, tokens) goes in layer 2 or 3, not here.
+
+### `~/.bashrc.d/`
+
+Near the end of `.bashrc`, every readable `~/.bashrc.d/*.sh` file is sourced in sorted (glob) order. Prefix names with numbers to control the order:
+
+```
+~/.bashrc.d/
+├── 10-wsl.sh
+└── 50-dev-tools.sh
+```
+
+Files without the `.sh` suffix are ignored. A missing or empty directory does nothing.
+
+Snippets run after the shared defaults, so they can override them, e.g. `export EDITOR=nano`. If a snippet changes `PROMPT_COMMAND`, append to it instead of replacing it so the zoxide hook keeps working.
+
+### `~/.bashrc.local`
+
+Sourced last, after `~/.bashrc.d/`, so it can override everything. See [Local overrides](#local-overrides).
 
 ---
 
@@ -51,7 +94,7 @@ Prefix a command with a space to prevent it from being saved to history — usef
 
 | Option | What it does |
 |---|---|
-| `autocd` | Type a directory path without `cd` to enter it: `~/repos/home-ops` |
+| `autocd` | Type a directory path without `cd` to enter it: `~/repos/jhomen368/home-ops` |
 | `cdspell` | Auto-corrects minor typos in `cd` paths: `cd reops` → `repos` |
 | `globstar` | `**` matches files recursively: `ls **/*.yaml` lists all yaml files at any depth |
 | `checkwinsize` | Keeps `$LINES`/`$COLUMNS` accurate so `less`, `man`, `vim` render correctly after terminal resize |
@@ -90,9 +133,9 @@ Prefix a command with a space to prevent it from being saved to history — usef
 #### `cdg`
 Jump to the root of the current git repository from anywhere inside it:
 ```bash
-cd ~/repos/home-ops/clusters/homenet-main/apps/jellyfin
+cd ~/repos/jhomen368/home-ops/clusters/homenet-main/apps/jellyfin
 cdg
-# → ~/repos/home-ops
+# → ~/repos/jhomen368/home-ops
 ```
 
 #### `mkcd <dir>`
@@ -126,9 +169,54 @@ extract archive.tar.gz ./my-folder  # extract to a specific directory (created i
 
 ---
 
+### Editor
+
+`EDITOR` and `VISUAL` default to `vim`. A value already in the environment wins, and a `~/.bashrc.d/` snippet or `~/.bashrc.local` can set something else. If vim isn't installed, both stay unset and programs use their own fallback.
+
+---
+
+### Tab completion
+
+`.bashrc` loads bash-completion (`/usr/share/bash-completion/bash_completion`, or `/etc/bash_completion` on older systems), as Ubuntu's stock `.bashrc` does. It skips this if bash-completion is already loaded, isn't installed, or bash runs in POSIX mode. Completions for individual commands such as `git` load the first time you press Tab after them.
+
+`inputrc` adds these readline settings on top of `/etc/inputrc`:
+
+| Setting | Effect |
+|---|---|
+| `completion-ignore-case on` | `cd doc<Tab>` completes `Documents` |
+| `show-all-if-ambiguous on` | One Tab lists all matches (default needs two) |
+| Up / Down arrows | Search history for commands that start with what you've typed. On an empty line they work as usual. |
+
+---
+
+### zoxide
+
+If [zoxide](https://github.com/ajeetdsouza/zoxide) is installed, `z` jumps to frequently used directories by partial name (`z home-ops`). Without zoxide, nothing is loaded and nothing is printed.
+
+---
+
+### vim
+
+`vimrc` sets minimal defaults and uses no plugins: syntax highlighting and filetype indent, line numbers, 4-space indent with spaces, incremental and highlighted search, and case-insensitive search unless the pattern has a capital letter. The syntax and filetype lines are wrapped in `if has(...)`, so `vim.tiny` loads the file without errors.
+
+---
+
+### tmux
+
+`tmux.conf` sets minimal defaults and uses no plugins. It needs tmux 2.1 or newer.
+
+| Setting | Effect |
+|---|---|
+| `mouse on` | Click to select panes and windows, drag to resize, scroll to see history |
+| `history-limit 50000` | Scrollback per pane (default 2000) |
+| `base-index 1`, `pane-base-index 1` | Windows and panes are numbered from 1 |
+| `renumber-windows on` | Closing a window renumbers the rest, so there are no gaps |
+
+---
+
 ### Local overrides
 
-If `~/.bashrc.local` exists, it is sourced at the end of `.bashrc`. Use it for machine-specific settings that should not be committed:
+If `~/.bashrc.local` exists, `.bashrc` sources it last, after `~/.bashrc.d/`, so it overrides everything else. Use it for settings that belong to this one machine and must not be committed:
 - API keys or tokens
 - Work-specific PATH entries
 - Aliases that only apply to one machine
