@@ -1,5 +1,10 @@
 # ~/.bashrc — managed from ~/.shell-config/.bashrc
-# Source this file via symlink: ln -s ~/.shell-config/.bashrc ~/.bashrc
+# Installed as a symlink by install.sh (ln -s <repo>/.bashrc ~/.bashrc)
+#
+# Load order:
+#   1. this file              shared by every machine
+#   2. ~/.bashrc.d/*.sh       per kind of machine (sorted, optional)
+#   3. ~/.bashrc.local        this machine only, never committed (optional)
 
 # ──────────────────────────────────────────────────────
 # If not running interactively, don't do anything
@@ -25,6 +30,16 @@ shopt -s autocd               # Type a directory name to cd into it
 shopt -s cdspell              # Auto-correct minor typos in cd
 shopt -s checkwinsize         # Update LINES/COLUMNS after each command
 shopt -s globstar             # ** glob matches recursively
+
+# ──────────────────────────────────────────────────────
+# EDITOR
+# Defaults only: an existing EDITOR/VISUAL (from the environment or a
+# drop-in) wins. Skipped when vim isn't installed.
+# ──────────────────────────────────────────────────────
+if command -v vim >/dev/null 2>&1; then
+    export EDITOR="${EDITOR:-vim}"
+    export VISUAL="${VISUAL:-vim}"
+fi
 
 # ──────────────────────────────────────────────────────
 # PROMPT (PS1)
@@ -155,7 +170,46 @@ extract() {
 }
 
 # ──────────────────────────────────────────────────────
+# COMPLETION
+# Load bash-completion (as Ubuntu's default .bashrc does) unless it is
+# already loaded or bash runs in POSIX mode.
+# ──────────────────────────────────────────────────────
+if ! shopt -oq posix && [[ -z ${BASH_COMPLETION_VERSINFO-} ]]; then
+    if [[ -f /usr/share/bash-completion/bash_completion ]]; then
+        # shellcheck source=/dev/null
+        source /usr/share/bash-completion/bash_completion
+    elif [[ -f /etc/bash_completion ]]; then
+        # shellcheck source=/dev/null
+        source /etc/bash_completion
+    fi
+fi
+
+# ──────────────────────────────────────────────────────
+# OPTIONAL TOOLS (skipped silently when not installed)
+# ──────────────────────────────────────────────────────
+# zoxide: smarter cd (z <partial-name>)
+command -v zoxide >/dev/null && eval "$(zoxide init bash)"
+
+# ──────────────────────────────────────────────────────
+# DROP-INS (per kind of machine, e.g. WSL or dev hosts)
+# ──────────────────────────────────────────────────────
+# Source every readable ~/.bashrc.d/*.sh in sorted order. These files are
+# placed by provisioning tools or private dotfiles, not by this repo.
+# No-op when the directory is missing or empty.
+if [[ -d ~/.bashrc.d ]]; then
+    for __bashrc_d_file in ~/.bashrc.d/*.sh; do
+        # An unmatched glob stays literal and fails the -f test
+        if [[ -f $__bashrc_d_file && -r $__bashrc_d_file ]]; then
+            # shellcheck source=/dev/null
+            source "$__bashrc_d_file"
+        fi
+    done
+    unset __bashrc_d_file
+fi
+
+# ──────────────────────────────────────────────────────
 # LOCAL OVERRIDES (machine-specific, not committed)
+# Sourced last so it can override everything above.
 # ──────────────────────────────────────────────────────
 # Source a local bashrc for machine-specific settings that you
 # don't want committed (e.g. secrets, PATH additions, work configs)
